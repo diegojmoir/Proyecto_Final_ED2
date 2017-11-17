@@ -1,5 +1,11 @@
 var mongoose = require('mongoose');
 var bcrypt   = require('bcrypt-nodejs');
+var edge = require('edge');
+var Variable = edge.func({
+    assemblyFile: "Dlls/Cifrado.dll",
+    typeName: "Cifrado.SDES",
+    methodName: "cifrado"
+  });
 
 var userSchema = mongoose.Schema({
   local: {
@@ -14,7 +20,20 @@ userSchema.methods.generateHash = function(password) {
 };
 
 userSchema.methods.validPassword = function(password) {
-  return bcrypt.compareSync(password, this.local.password);
+  console.log(password);
+  console.log(this.local.password);
+  Variable(password, function (error, result) {
+    if(error) throw error;
+     console.log(result);
+     password = result; 
+ });
+ if(password === this.local.password){
+   return true;
+ }
+ else{
+   return false;
+ }
+
 };
 
 module.exports = mongoose.model('User', userSchema);

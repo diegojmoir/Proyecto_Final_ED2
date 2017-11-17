@@ -1,6 +1,11 @@
 var LocalStrategy = require('passport-local').Strategy;
 var User = require('../models/user');
-
+var edge = require('edge');
+var Variable = edge.func({
+    assemblyFile: "Dlls/Cifrado.dll",
+    typeName: "Cifrado.SDES",
+    methodName: "cifrado"
+  });
 
 
 module.exports = function(passport) {
@@ -30,7 +35,11 @@ module.exports = function(passport) {
         } else {
           var newUser = new User();
           newUser.local.username = username;
-          newUser.local.password = newUser.generateHash(password);
+          Variable(req.body.password, function (error, result) {
+            if(error) throw error;
+             console.log(result);
+             newUser.local.password = result; 
+         });
           newUser.save(function(err) {
             if (err)
               throw err;
@@ -46,7 +55,7 @@ module.exports = function(passport) {
     passwordField: 'password',
     passReqToCallback: true,
   },
-  function(req, email, password, done) {
+  function(req, username, password, done) {
     User.findOne({ 'local.username':  username }, function(err, user) {
       if (err)
           return done(err);

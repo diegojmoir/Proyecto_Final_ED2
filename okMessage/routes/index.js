@@ -15,7 +15,7 @@ router.get('/signup', function(req, res) {
 });
 
 router.get('/profile', isLoggedIn, function(req, res) {
-  res.render('profile.ejs', { user: req.user });
+  res.redirect('/chat', { user: req.user });
 });
 
 router.get('/logout', function(req, res) {

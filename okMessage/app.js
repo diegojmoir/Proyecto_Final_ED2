@@ -43,7 +43,7 @@ require('./config/passport')(passport);
 
 app.use('/', routes);
 app.use('/users', users);
-app.use('/chat', chat);
+app.use('/chat', chat(app.io));
 
 app.use(function(req, res, next) {
   var err = new Error('Not Found');

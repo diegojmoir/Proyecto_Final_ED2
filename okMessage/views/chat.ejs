@@ -1,114 +1,547 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
-    <title>MongoChat</title>
-    <style>
-        #messages{height:300px;}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 offset-md-3 col-sm-12">
-                <h1 class="text-center">
-                    MongoChat 
-                    <button id="clear" class="btn btn-danger">Clear</button>
-                </h1>
-                <div id="status"></div>
-                
-                <div id="chat">
-                    <strongid="username" class="form-control" placeholder="Enter name...">username</strong>: <%= user.local.username %><br>
-                    <input type="text" id="username" class="form-control" placeholder="Enter name...">
-                    <br>
-                    <div class="card">
-                        <div id="messages" class="card-block">
+<!doctype html>
 
-                        </div>
-                    </div>
-                    <br>
-                    <textarea id="textarea" class="form-control" placeholder="Enter message..."></textarea>
-                </div>
-            </div>
-        </div>
-    </div>
+<html>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+	<head>
+		<meta charset='utf-8'>
+		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+		<title> boringChat </title>
+		<link href="https://fonts.googleapis.com/css?family=Roboto+Condensed" rel="stylesheet">
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+		<script type="text/javascript" src="https://code.jquery.com/jquery-1.11.1.js"></script>
+		<style>
+			html, body {
+				height: 100%;
+				width: 100%;
+			}
+			body {
+				font: 13px;
+				font-family: 'Roboto Condensed', sans-serif;
+			}
+			#optionsBar {
+				display: inline-block;
+				height: 94%;
+				width: 20%;
+				border: 1px solid #000;
+				margin-right: 2%;
+				padding-left: 10px;
+				padding-right: 8px;
+				overflow: auto;
+			}
+			#chatbox {
+				display: inline-block;
+				position: absolute;
+				height: 100%;
+				width: 65%;
+			}
+			
+			#display {
+				position: relative;
+				left: 0;
+				top: 0;
+				height: 90%;
+				border: 1px solid #000;
+				overflow: auto;
+			}
+			.ascii_face li {
+				font-size: 18px;
+			}
+			.ascii_face p {
+				display: inline-block;
+			}
+			form {
+				position: relative;
+				background: #fff;
+				padding: none;
+				top: 95%;
+				width: 100%;
+			}
+			#sendMsg{
+				width: 100%;
+			}
+			form input {
+				border: 1px solid #000;
+				padding: 10px;
+				width: 90%;
+				margin-right: 1%;
+			}
+			form button {
+				width: auto;
+				margin: 0;
+				background: rgb(130, 224, 255);
+				padding: 10px 15px 10px 15px;
+			}
+			#optionsBar button {
+				padding: 3px 5px 3px 5px;
+				border: 1px solid #000;
+				border-radius: 6px;
+			}
+			#messages {
+				list-style-type: none;
+				margin: 0;
+				padding: 0;
+			}
+			#messages li {
+				padding: 5px 10px;
+				margin: 0;
+			}
+			#messages li:nth-child(odd){
+				background: #eee;
+			}
+			
+			#picReactionChoices, #asciiReactionChoices {
+				display: none; /* only show when an option is selected */
+				border: 1px solid #000;
+				height: 10%; /* change this later */
+			}
+			
+			#addNewEmoticon li {
+				list-style-type: none;
+			}
+			
+			#addNewEmoticon ul {
+				padding-left: 0;
+			}
+			
+			.asciiface:hover {
+				background-color: rgba(0, 178, 0, .2);
+			}
+			.removeAscii {
+				display: inline-block;
+				padding-left: 20px;
+			}
 
-    <script>
-        (function(){
-            var element = function(id){
-                return document.getElementById(id);
-            }
-            // Get Elements
-            var status = element('status');
-            var messages = element('messages');
-            var textarea = element('textarea');
-            var username = element('username');
-            var clearBtn = element('clear');
-            // Set default status
-            var statusDefault = status.textContent;
-            var setStatus = function(s){
-                // Set status
-                status.textContent = s;
-                if(s !== statusDefault){
-                    var delay = setTimeout(function(){
-                        setStatus(statusDefault);
-                    }, 3000);
-                }
-            }
-            // Connect to socket.io
-            var socket = io.connect('/');
-            // Check for connection
-            if(socket !== undefined){
-                console.log('Connected to socket...');
-                // Handle Output
-                socket.on('output', function(data){
-                    //console.log(data);
-                    if(data.length){
-                        for(var x = 0;x < data.length;x++){
-                            // Build out message div
-                            var message = document.createElement('div');
-                            message.setAttribute('class', 'chat-message');
-                            message.textContent = data[x].name+": "+data[x].message;
-                            messages.appendChild(message);
-                            messages.insertBefore(message, messages.firstChild);
-                        }
-                    }
-                });
-                // Get Status From Server
-                socket.on('status', function(data){
-                    // get message status
-                    setStatus((typeof data === 'object')? data.message : data);
-                    // If status is clear, clear text
-                    if(data.clear){
-                        textarea.value = '';
-                    }
-                });
-                // Handle Input
-                textarea.addEventListener('keydown', function(event){
-                    if(event.which === 13 && event.shiftKey == false){
-                        // Emit to server input
-                        socket.emit('input', {
-                            name:username.value,
-                            message:textarea.value
-                        });
-                        event.preventDefault();
-                    }
-                })
-                // Handle Chat Clear
-                clearBtn.addEventListener('click', function(){
-                    socket.emit('clear');
-                });
-                // Clear Message
-                socket.on('cleared', function(){
-                    messages.textContent = '';
-                });
-            }
-        })();
-    </script>
-</body>
+			.removeAscii:hover {
+				color: rgba(178, 0, 0, .8);
+			}
+			
+			@media screen and (max-width: 800px){
+				#optionsBar {
+				}
+				#reactionASCII h3{
+					font-size: 18px;
+				}
+				#people h2{
+					font-size: 20px;
+				}
+				#m{
+					width: 60%;
+				}
+				input, select{
+					width: 100%;
+				}
+				#asciiReactionChoices{
+					border: none;
+				}
+				#asciiReactionChoices p{
+					font-size: 12px;
+				}
+				#asciiReactionChoices ul{
+					padding: 0;
+				}
+				#asciiReactionChoices li{
+					font-size: 10px;
+					whitespace: nowrap;
+				}
+				.removeAscii{
+					color: rgba(178, 0, 0, .8);
+				}
+			
+			}
+
+		</style>
+	</head>
+	
+	<body>
+	
+		<div id='optionsBar'>
+		
+			<div id='people'>
+				<h2 id='userGreeting'> hello, <%= user.local.username %> </h2>
+				<h3> currently online: </h3>
+				<ol id='userList'>
+					<!-- list the users 
+					<li> <%= user.local.username %> </li>
+					-->
+				</ol>
+			</div>
+			
+			<!-- pictures can be dealt with later... 
+			<hr>
+			
+			<div id='reactionPics'>
+				<h2> reaction pictures </h2>
+				
+				<select id='selectReactPic' onchange="showChoices(this)">
+						<option value="p0"></option>
+						<option value="p1"> happy </option>
+						<option value="p2"> sad </option>
+						<option value="p3"> angry </option>
+						<option value="p4"> funny </option>
+				</select>
+				
+				<div id='picReactionChoices'>
+					<h1> stuff goes here... <h2>
+				</div>
+				
+				<div id='addNewReactPic'>
+					<h3> add new reaction pic! </h3>
+					<input id="fileInput" style="display:none;" type="file">
+					<button onclick=''> import </button>
+					<label> category: <input id='picCategory' type='text' /> </label>
+				</div>
+			</div>
+			-->
+			
+			<hr>
+			
+			<!-- oops! not all emoticons are ASCII! some contain Unicode characters as well. -->
+			<div id='reactionASCII'>
+				<h3> pick an emoticon </h3>
+				
+				<!-- select a reaction ascii emoticon thing here -->
+				<label> select a category: </label>
+				<select id='selectReactAscii' onchange="showChoices(this)">
+					
+					<option value="a0"></option>
+					<% for(var category in user.local.ascii_emoticons) { %>
+						<option value="<%= category %>"> <%= category %></option> 
+					<% } %>
+					
+				</select>
+				
+				<!-- choices show up here after selecting option --> 
+				<div id='asciiReactionChoices'>
+					
+					<!-- for each emoticon category, list the options. keep them hidden until selected with the dropdown -->
+					<% for(var category in user.local.ascii_emoticons) { %>		
+						<ul id='<%= category %>' class='ascii_face' style="display: none">
+							<% for(var i = 0; i < user.local.ascii_emoticons[category].length; i++){ %>
+								<li>
+									<p id='<%= category + i %>' onclick='addReactionToChat(this)'> <%=  user.local.ascii_emoticons[category][i]  %> </p>
+									<p class='removeAscii' onclick='removeEmoticon(this)'> remove </p> 									
+								</li>
+							<% } %>
+						</ul>		
+					<% } %>
+					
+				</div>
+				<h3> add a new emoticon </h3>
+
+				<div id='addNewEmoticon'>
+					<ul>
+						<li><label> category: </label> <input type='text' id='newOption' placeholder='i.e. happy, sad, annoyed, ...'></input></li>
+						<br>
+						<li><label> emoticon: </label> <input type='text' id='newEmoticon' placeholder='i.e. (ಠ‿ಠ), (ノಠ益ಠ)ノ, ...'></input></li>
+						<br>
+						<button onclick='addNewEmoticon()'> add </button>
+					</ul>
+				</div>
+				
+				<hr>
+				
+				<!-- send a pic -->
+				<div id='sendPic'>
+					<h3> send picture </h3>
+					<input id="fileInput" style="display:none;" type="file">
+					<button onclick='fileHandler()'> select picture </button>
+				</div>
+
+			</div>
+		</div>
+	
+	
+		<div id='chatbox'>
+			<div id='display'>
+				<ul id="messages"></ul>
+			</div>
+			<hr>
+			<div id='sendMsg'>
+				<form action="">
+				<input id="m" autocomplete="off" placeholder='enter a message...'/>
+					<button> Send </button>
+				</form>
+			</div>
+		</div>
+		
+		<script>
+			var socket = io();
+
+			$(function(){
+			
+				// tell the server the username of this user that just connected 
+				var greeting = $('#userGreeting').text();
+				var username = greeting.substring(greeting.indexOf(',') + 1).trim();
+				socket.emit('userConnected', username);
+				
+				// then get all the current users from server and list them 
+				socket.on('getCurrentUsers', function(userList){
+					// empty user list first before updating
+					$('#userList').empty();
+					var list = document.getElementById('userList');
+					for(var i = 0; i < userList.length; i++){
+						var user = document.createElement('li');
+						user.textContent = userList[i];
+						list.appendChild(user);
+					}
+				});
+			
+				$('form').submit(function(){
+					// send the message to the server, which will then send this message to all clients
+					socket.emit('chat message', {'user': username, 'msg': $('#m').val()});
+					$('#m').val('');
+					return false;
+				});
+				socket.on('chat message', function(msg){
+					// this is the client part. when you receive a message from the server, display it.
+					$('#messages').append($('<li>').text(msg));
+				});
+				socket.on('image', function(imgData){
+					// this is where client handles imgData sent from the server 
+					var img = new Image();
+					img.src = imgData.img;
+					
+					var canvas = document.createElement('canvas');
+					canvas.setAttribute("width", "200px");
+					canvas.setAttribute("height", "200px");
+					
+					img.onload = function(){
+						var ctx = canvas.getContext('2d');
+						ctx.drawImage(img, 0, 0, 200, 200);
+					}
+					
+					var newListElement = document.createElement('li');
+					var timestamp = new Date().toLocaleString();
+					
+					// also include username of user who sent it
+					var user = document.createElement('span');
+					user.textContent = imgData.user + ": ";
+					newListElement.appendChild(user);
+					
+					newListElement.appendChild(canvas);
+					var date = document.createElement('span');
+					date.textContent = timestamp;
+					
+					newListElement.appendChild(date);
+					$('#messages').append(newListElement);
+				});
+			});
+			
+			/****
+			
+				show the emoticon choices for selected option 
+			
+			****/
+			var currentlySelected = undefined;
+			function showChoices(option){
+			
+				var choicesDisplay = document.getElementById('asciiReactionChoices');
+				
+				if(currentlySelected && currentlySelected.id !== option.value){
+					choicesDisplay.style.display = "none";
+					currentlySelected.style.display = "none";
+				}
+				
+				// check if blank option selected. don't show anything 
+				if(option.value === "p0"){
+					document.getElementById('picReactionChoices').style.display = "none";
+					return;
+				}else if(option.value === "a0"){
+					document.getElementById('asciiReactionChoices').style.display = "none";
+					return;
+				}
+			
+				// the ascii face category the user selects
+				var selectedOption = document.getElementById(option.value);
+				
+				selectedOption.style.display = "block";
+				choicesDisplay.style.display = "block";
+				currentlySelected = selectedOption;
+			}
+			
+			/****
+			
+				add reaction to message input 
+				
+			*****/
+			function addReactionToChat(element){
+				var reaction = $('#' + element.id).contents().filter(function(){
+					return this.nodeType === 3;
+				}).text();
+				$('#m').val( $('#m').val() + " " + reaction );
+			}
+			
+			/****
+			
+				add a new custom emoticon to the dropdown box
+			
+			*****/
+			function addNewEmoticon(){
+				var option = document.getElementById('newOption').value.trim();
+				var emoticon = document.getElementById('newEmoticon').value.trim();
+				var select = document.getElementById('selectReactAscii');
+				
+				// see what emoticons are currently available and see if it's already present 
+				var categories = document.querySelectorAll('ul.ascii_face');
+				var selectedCategory = undefined;
+				for(var i = 0; i < categories.length; i++){
+					if(categories[i].id === option){
+						selectedCategory = categories[i];
+					}
+				}
+				
+				// if the user is trying to put in an ascii face that will go into an already-present category, 
+				// check to see that face doesn't exist yet 
+				if(selectedCategory){
+					// look through the child elements of the selected category. these will be <li> elements 
+					for(var i = 0; i < selectedCategory.children.length; i++){
+						// need to go to one more layer of child nodes to get to the emoticon (should be a p element)
+						if(selectedCategory.children[i].children[0].textContent.indexOf(emoticon) >= 0){
+							// if a match for an emoticon is found, don't do anything.
+							console.log("that emoticon already exists...");
+							return;
+						}
+					}
+				}
+				
+				$.ajax({
+					type: 'POST',
+					url: '/post_ascii/?' + 'category=' + option + '&' + 'face=' + emoticon,
+					success: function(response){				
+						/***
+							on client side, add the new emoticon manually by creating the element and appending
+						***/
+						
+						var newEmoticonListNode = document.createElement('li');
+						var newEmoticon = document.createElement('p');
+						newEmoticon.textContent = emoticon;
+						
+						// get current number of emoticons in this category 
+						var count = response.local.ascii_emoticons[option].length;
+						newEmoticon.id = option + count;
+						
+						newEmoticon.addEventListener('click', function(){
+							addReactionToChat(this);
+						}, false);
+						
+						var removeOption = document.createElement('p');
+						removeOption.textContent = "remove";
+						removeOption.classList.add("removeAscii");
+						
+						removeOption.addEventListener('click', function(){
+							removeEmoticon(this);
+						}, false);
+						
+						newEmoticonListNode.appendChild(newEmoticon);
+						newEmoticonListNode.appendChild(removeOption);
+					
+						// if the category already exists, just append a new li element 
+						if(selectedCategory){
+							// if category already exists, just append to it 
+							selectedCategory.appendChild(newEmoticonListNode);
+						}else{
+							// otherwise, make the new category element 
+							var newCategory = document.createElement('ul');
+							newCategory.id = option;
+							newCategory.classList.add('ascii_face');
+							newCategory.style.display = "none";
+							newCategory.appendChild(newEmoticonListNode);
+							
+							// append new category to asciiReactionChoices
+							document.getElementById('asciiReactionChoices').appendChild(newCategory);
+							
+							// add the new category as a new option in the dropdown box 
+							var newOption = document.createElement('option');
+							newOption.value = option;
+							newOption.textContent = option;
+							document.getElementById('selectReactAscii').appendChild(newOption);
+						}
+					}
+				});
+				
+			}
+			
+			/*****
+			
+				remove an emoticon
+				
+			******/
+			function removeEmoticon(element){
+			
+				// get sibling node of the 'remove' p element that was clicked on 
+				var emoticonNode = element.parentNode.children[0];
+				
+				// get the text of the sibling node (should be an emoticon)
+				var emoticonToRemove = emoticonNode.textContent;
+				
+				// find out what option is currently selected in the dropdown 
+				var select = document.getElementById('selectReactAscii');
+				var option = select.options[select.selectedIndex].textContent.trim();
+				
+				// then make call to server to delete from database 
+				$.ajax({
+						type: 'DELETE',
+						 // append the selected ascii face, and its category, as query parameters to the url.
+						 // the two queries are: category and face 
+						url: '/delete_asciiface/?' + 'category=' + option + '&' + 'face=' + emoticonToRemove,
+						success: function(response){				
+							
+							/***
+								now delete the emoticon client-side manually 
+								how about deleting the option if the last emoticon in that category is deleted?
+							***/
+							// this should get the ul element of the emoticon category
+							var categoryOptions = emoticonNode.parentNode.parentNode; 
+							
+							// delete the li element where the emoticon (p element) lives 
+							categoryOptions.removeChild(element.parentNode);
+							
+							//console.log(response);
+						}
+				});				
+			}
+			
+			/*
+				import a picture 
+			*/
+			function fileHandler(){
+				//initiate file choosing after button click
+				var input = document.getElementById('fileInput');
+				input.addEventListener('change', getFile, false);
+				input.click();
+			}
+
+			function getFile(e){
+
+				var reader = new FileReader();
+				var file = e.target.files[0];
+				var imgData;
+				
+				if (!file.type.match(/image.*/)){
+					console.log("not a valid image");
+					return;
+				}
+				
+				//after reader has loaded file, put the data in the image object.
+				reader.onloadend = function(){
+					
+					// get the base64 data of the image and assign it to imgData variable 
+					imgData = reader.result;
+					
+					var greeting = $('#userGreeting').text();
+					var username = greeting.substring(greeting.indexOf(',') + 1).trim();
+					
+					// send that variable to the server so it can send it to all clients
+					socket.emit('image', {'user': username, 'img': imgData});
+				}
+
+				//read file as a URL
+				reader.readAsDataURL(file);
+			};
+
+			
+		</script>
+		
+	</body>
+
 </html>

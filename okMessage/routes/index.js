@@ -15,7 +15,7 @@ router.get('/signup', function(req, res) {
 });
 
 router.get('/profile', isLoggedIn, function(req, res) {
-  res.redirect('/chat', { user: req.user });
+  res.redirect('.profile.ejs', { user: req.user });
 });
 
 router.get('/logout', function(req, res) {
@@ -24,13 +24,13 @@ router.get('/logout', function(req, res) {
 });
 
 router.post('/signup', passport.authenticate('local-signup', {
-  successRedirect: '/profile',
+  successRedirect: '/chat',
   failureRedirect: '/signup',
   failureFlash: true,
 }));
 
 router.post('/login', passport.authenticate('local-login', {
-  successRedirect: '/profile',
+  successRedirect: '/chat',
   failureRedirect: '/login',
   failureFlash: true,
 }));

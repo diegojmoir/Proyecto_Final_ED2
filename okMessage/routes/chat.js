@@ -3,9 +3,10 @@ module.exports = function(io){
     var router = express.Router();
     var mongo = require('mongodb').MongoClient;
     var db;
+    var users = [];
     
     
-    router.get('/', function(req, res){
+    router.get('/', isLoggedIn, function(req, res){
       mongo.connect('mongodb://kouz:kouz@ds259255.mlab.com:59255/apimensajes', function(err, _db){
         if(err){
             throw err;
@@ -16,62 +17,50 @@ module.exports = function(io){
         console.log('MongoDB connected...');
         
     
-        // Connect to Socket.io
+        
         io.on('connection', function(socket){
             let chat = db.collection('chats');
-    
-            // Create function to send status
-            sendStatus = function(s){
-                socket.emit('status', s);
-            }
-    
-            // Get chats from mongo collection
-            chat.find().limit(100).sort({_id:1}).toArray(function(err, res){
-                if(err){
-                    throw err;
+            // see if can get logged-in user info 
+            // didn't get what I thought I would get. are usernames stored with sessions?
+            // console.log(socket.request.session.passport);
+            socket.on('userConnected', function(username){
+                if(users.indexOf(username) < 0){
+                    users.push(username);
                 }
-    
-                // Emit the messages
-                socket.emit('output', res);
+                io.emit('getCurrentUsers', users);
             });
-    
+            
+            socket.on('chat message', function(msg){
+                // this is the server sending out the message to every client
+                
+                // get current date and time
+                var timestamp = new Date().toLocaleString();
+                
+                // adding whitespace doesn't work because this message will be surrounded by <li> tags 
+                // instead, you can use '\u00A0', the unicode for whitespace 
+                // https://stackoverflow.com/questions/12882885/how-to-add-nbsp-using-d3-js-selection-text-method
+                
+                io.emit('chat message', msg.user + ": " + msg.msg + "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 " + timestamp);
+            });
+            
+           
             // Handle input events
-            socket.on('input', function(data){
-                let name = data.name;
-                let message = data.message;
-    
-                // Check for name and message
-                if(name == '' || message == ''){
-                    // Send error status
-                    sendStatus('Please enter a name and message');
-                } else {
-                    // Insert message
-                    chat.insert({name: name, message: message}, function(){
-                        io.emit('output', [data]);
-    
-                        // Send status object
-                        sendStatus({
-                            message: 'Message sent',
-                            clear: true
-                        });
-                    });
-                }
-            });
-    
-            // Handle clear
-            socket.on('clear', function(data){
-                // Remove all chats from collection
-                chat.remove({}, function(){
-                    // Emit cleared
-                    socket.emit('cleared');
-                });
+            
+            socket.on('image', function(img){
+                // send all clients the imgData that was sent here (to this server)
+                io.emit('image', img);
             });
         });
     
   
     
-      res.render('chat' );
+      res.render('chat',{ user: req.user } );
     });
+    function isLoggedIn(req, res, next) {
+        if (req.isAuthenticated())
+            return next();
+        res.redirect('/');
+      }
     
 return router
 } ;

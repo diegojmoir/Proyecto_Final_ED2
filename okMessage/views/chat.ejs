@@ -197,48 +197,11 @@
 			
 			<!-- oops! not all emoticons are ASCII! some contain Unicode characters as well. -->
 			<div id='reactionASCII'>
-				<h3> pick an emoticon </h3>
 				
-				<!-- select a reaction ascii emoticon thing here -->
-				<label> select a category: </label>
-				<select id='selectReactAscii' onchange="showChoices(this)">
-					
-					<option value="a0"></option>
-					<% for(var category in user.local.ascii_emoticons) { %>
-						<option value="<%= category %>"> <%= category %></option> 
-					<% } %>
-					
-				</select>
 				
 				<!-- choices show up here after selecting option --> 
-				<div id='asciiReactionChoices'>
-					
-					<!-- for each emoticon category, list the options. keep them hidden until selected with the dropdown -->
-					<% for(var category in user.local.ascii_emoticons) { %>		
-						<ul id='<%= category %>' class='ascii_face' style="display: none">
-							<% for(var i = 0; i < user.local.ascii_emoticons[category].length; i++){ %>
-								<li>
-									<p id='<%= category + i %>' onclick='addReactionToChat(this)'> <%=  user.local.ascii_emoticons[category][i]  %> </p>
-									<p class='removeAscii' onclick='removeEmoticon(this)'> remove </p> 									
-								</li>
-							<% } %>
-						</ul>		
-					<% } %>
-					
-				</div>
-				<h3> add a new emoticon </h3>
-
-				<div id='addNewEmoticon'>
-					<ul>
-						<li><label> category: </label> <input type='text' id='newOption' placeholder='i.e. happy, sad, annoyed, ...'></input></li>
-						<br>
-						<li><label> emoticon: </label> <input type='text' id='newEmoticon' placeholder='i.e. (ಠ‿ಠ), (ノಠ益ಠ)ノ, ...'></input></li>
-						<br>
-						<button onclick='addNewEmoticon()'> add </button>
-					</ul>
-				</div>
 				
-				<hr>
+				
 				
 				<!-- send a pic -->
 				<div id='sendPic'>

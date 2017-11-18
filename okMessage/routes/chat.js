@@ -1,6 +1,7 @@
 module.exports = function(io){
     var express = require('express');
     var router = express.Router();
+    var User = require('../models/user');
     var mongo = require('mongodb').MongoClient;
     var db;
     var users = [];
@@ -15,15 +16,16 @@ module.exports = function(io){
       });
     
         console.log('MongoDB connected...');
-        
-    
+        var newUser="";
+        newUser=""+req.user;
         
         io.on('connection', function(socket){
-            let chat = db.collection('chats');
+            
             // see if can get logged-in user info 
             // didn't get what I thought I would get. are usernames stored with sessions?
             // console.log(socket.request.session.passport);
             socket.on('userConnected', function(username){
+                
                 if(users.indexOf(username) < 0){
                     users.push(username);
                 }
@@ -39,8 +41,12 @@ module.exports = function(io){
                 // adding whitespace doesn't work because this message will be surrounded by <li> tags 
                 // instead, you can use '\u00A0', the unicode for whitespace 
                 // https://stackoverflow.com/questions/12882885/how-to-add-nbsp-using-d3-js-selection-text-method
+                if(newUser.includes(""+msg.user))
+                {
+                    io.emit('chat message', msg.user + ": " + msg.msg + "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 " + timestamp);
+
+                }
                 
-                io.emit('chat message', msg.user + ": " + msg.msg + "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 " + timestamp);
             });
             
            
